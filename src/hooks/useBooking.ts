@@ -263,7 +263,11 @@ export const useBooking = (
 						),
 					});
 				} catch (err) {
-					dispatch({ type: "error", payload: err instanceof Error ? err.message : "Could not fetch bookings" });
+					dispatch({
+						type: "error",
+						payload:
+							err instanceof Error ? err.message : "Could not fetch bookings",
+					});
 				}
 			};
 
@@ -294,7 +298,11 @@ export const useBooking = (
 
 					dispatch({ type: "loading" });
 				} catch (err) {
-					dispatch({ type: "error", payload: err instanceof Error ? err.message : "Could not create booking" });
+					dispatch({
+						type: "error",
+						payload:
+							err instanceof Error ? err.message : "Could not create booking",
+					});
 				}
 			};
 
