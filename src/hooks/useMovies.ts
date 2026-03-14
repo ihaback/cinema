@@ -336,8 +336,8 @@ export const useMovies = () => {
 						type: "success",
 						payload: jsonMovies,
 					});
-				} catch {
-					dispatch({ type: "error", payload: "Could not fetch movies." });
+				} catch (err) {
+					dispatch({ type: "error", payload: err instanceof Error ? err.message : "Could not fetch movies." });
 				}
 			};
 
@@ -366,8 +366,8 @@ export const useMovies = () => {
 					}
 
 					dispatch({ type: "loading" });
-				} catch {
-					dispatch({ type: "error", payload: "Could not update movie" });
+				} catch (err) {
+					dispatch({ type: "error", payload: err instanceof Error ? err.message : "Could not update movie" });
 				}
 			};
 
@@ -390,8 +390,8 @@ export const useMovies = () => {
 					}
 
 					dispatch({ type: "loading" });
-				} catch {
-					dispatch({ type: "error", payload: "Could not delete movie" });
+				} catch (err) {
+					dispatch({ type: "error", payload: err instanceof Error ? err.message : "Could not delete movie" });
 				}
 			};
 
@@ -420,8 +420,8 @@ export const useMovies = () => {
 					}
 
 					dispatch({ type: "loading" });
-				} catch {
-					dispatch({ type: "error", payload: "Could not create movie" });
+				} catch (err) {
+					dispatch({ type: "error", payload: err instanceof Error ? err.message : "Could not create movie" });
 				}
 			};
 
