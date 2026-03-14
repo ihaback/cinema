@@ -214,7 +214,7 @@ const movieReducer = (state: MovieState, action: MovieAction): MovieState => {
 				!state?.selectedMovieTitle ||
 				!state?.selectedMoviePrice ||
 				!state?.selectedMovieRows ||
-				!state?.selectedMovieRows ||
+				!state?.selectedMovieId ||
 				!state?.selectedMovieColumns ||
 				!state?.movies
 			) {
