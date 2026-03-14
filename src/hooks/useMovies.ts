@@ -48,10 +48,13 @@ export type MovieState = {
 			status: "create";
 	  }
 	| {
-			status: "submit";
+			status: "submitCreate";
 	  }
 	| {
-			status: "cancel";
+			status: "submitUpdate";
+	  }
+	| {
+			status: "submitDelete";
 	  }
 	| {
 			status: "noMovies";
@@ -97,11 +100,17 @@ export type MovieAction =
 			type: "create";
 	  }
 	| {
-			type: "error";
-			payload: string;
+			type: "submitCreate";
 	  }
 	| {
-			type: "resetSelectedMovieId";
+			type: "submitUpdate";
+	  }
+	| {
+			type: "submitDelete";
+	  }
+	| {
+			type: "error";
+			payload: string;
 	  };
 
 const initialState = {
@@ -269,18 +278,31 @@ const movieReducer = (state: MovieState, action: MovieAction): MovieState => {
 				formData: initialFormData,
 			};
 		}
+		case "submitCreate": {
+			return {
+				...state,
+				status: "submitCreate",
+				selectedMovieId: undefined,
+			};
+		}
+		case "submitUpdate": {
+			return {
+				...state,
+				status: "submitUpdate",
+			};
+		}
+		case "submitDelete": {
+			return {
+				...state,
+				status: "submitDelete",
+			};
+		}
 		case "error": {
 			return {
 				...state,
 				...initialState,
 				status: "error",
 				errorMessage: action.payload,
-			};
-		}
-		case "resetSelectedMovieId": {
-			return {
-				...state,
-				selectedMovieId: undefined,
 			};
 		}
 		default:
@@ -298,7 +320,7 @@ export const useMovies = () => {
 		}
 
 		if (state.status === "loading") {
-			const fetchData = async () => {
+			const fetchMovies = async () => {
 				try {
 					const moviesResponse = await fetch(
 						`${import.meta.env.VITE_API_URL}/movies?_sort=id&_order=desc`,
@@ -319,7 +341,91 @@ export const useMovies = () => {
 				}
 			};
 
-			fetchData();
+			fetchMovies();
+		}
+
+		if (state.status === "submitUpdate") {
+			const updateMovie = async () => {
+				try {
+					const response = await fetch(
+						`${import.meta.env.VITE_API_URL}/movies/${state.selectedMovieId}`,
+						{
+							method: "PUT",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								title: state.formData?.title,
+								price: state.formData?.price,
+								rows: state.formData?.rows,
+								columns: state.formData?.columns,
+							}),
+						},
+					);
+
+					if (!response.ok) {
+						throw new Error("Could not update movie");
+					}
+
+					dispatch({ type: "loading" });
+				} catch {
+					dispatch({ type: "error", payload: "Could not update movie" });
+				}
+			};
+
+			updateMovie();
+		}
+
+		if (state.status === "submitDelete") {
+			const deleteMovie = async () => {
+				try {
+					const response = await fetch(
+						`${import.meta.env.VITE_API_URL}/movies/${state.selectedMovieId}`,
+						{
+							method: "DELETE",
+							headers: { "Content-Type": "application/json" },
+						},
+					);
+
+					if (!response.ok) {
+						throw new Error("Could not delete movie");
+					}
+
+					dispatch({ type: "loading" });
+				} catch {
+					dispatch({ type: "error", payload: "Could not delete movie" });
+				}
+			};
+
+			deleteMovie();
+		}
+
+		if (state.status === "submitCreate") {
+			const createMovie = async () => {
+				try {
+					const response = await fetch(
+						`${import.meta.env.VITE_API_URL}/movies`,
+						{
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								title: state.formData?.title,
+								price: state.formData?.price,
+								rows: state.formData?.rows,
+								columns: state.formData?.columns,
+							}),
+						},
+					);
+
+					if (!response.ok) {
+						throw new Error("Could not create movie");
+					}
+
+					dispatch({ type: "loading" });
+				} catch {
+					dispatch({ type: "error", payload: "Could not create movie" });
+				}
+			};
+
+			createMovie();
 		}
 	}, [state.status]);
 
@@ -364,68 +470,19 @@ export const useMovies = () => {
 		});
 	};
 
-	const handleOnUpdate = async (e: MouseEvent<HTMLButtonElement>) => {
+	const handleOnUpdate = (e: MouseEvent<HTMLButtonElement>) => {
 		e.preventDefault();
-
-		if (!crudFormRef) {
-			return;
-		}
 
 		if (!validateForm(crudFormRef)) {
 			return;
 		}
 
-		const updateData = {
-			title: state?.formData?.title,
-			price: state?.formData?.price,
-			rows: state?.formData?.rows,
-			columns: state?.formData?.columns,
-		};
-
-		try {
-			const response = await fetch(
-				`${import.meta.env.VITE_API_URL}/movies/${state?.selectedMovieId}`,
-				{
-					method: "PUT",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify(updateData),
-				},
-			);
-
-			if (!response.ok) {
-				throw new Error("Could not update movie");
-			}
-
-			dispatch({ type: "loading" });
-		} catch {
-			dispatch({ type: "error", payload: "Could not update movie" });
-		}
+		dispatch({ type: "submitUpdate" });
 	};
 
-	const handleOnDelete = async (e: MouseEvent<HTMLButtonElement>) => {
+	const handleOnDelete = (e: MouseEvent<HTMLButtonElement>) => {
 		e.preventDefault();
-
-		try {
-			const response = await fetch(
-				`${import.meta.env.VITE_API_URL}/movies/${state?.selectedMovieId}`,
-				{
-					method: "DELETE",
-					headers: {
-						"Content-Type": "application/json",
-					},
-				},
-			);
-
-			if (!response.ok) {
-				throw new Error("Could not delete movie");
-			}
-
-			dispatch({ type: "loading" });
-		} catch {
-			dispatch({ type: "error", payload: "Could not delete movie" });
-		}
+		dispatch({ type: "submitDelete" });
 	};
 
 	const handleOnToggleCreate = () => {
@@ -440,38 +497,14 @@ export const useMovies = () => {
 		});
 	};
 
-	const handleOnCreate = async (e: MouseEvent<HTMLButtonElement>) => {
+	const handleOnCreate = (e: MouseEvent<HTMLButtonElement>) => {
 		e.preventDefault();
 
 		if (!validateForm(crudFormRef)) {
 			return;
 		}
 
-		const createData = {
-			title: state?.formData?.title,
-			price: state?.formData?.price,
-			rows: state?.formData?.rows,
-			columns: state?.formData?.columns,
-		};
-
-		try {
-			const response = await fetch(`${import.meta.env.VITE_API_URL}/movies`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify(createData),
-			});
-
-			if (!response.ok) {
-				throw new Error("Could not create movie");
-			}
-
-			dispatch({ type: "resetSelectedMovieId" });
-			dispatch({ type: "loading" });
-		} catch {
-			dispatch({ type: "error", payload: "Could not create movie" });
-		}
+		dispatch({ type: "submitCreate" });
 	};
 
 	return {

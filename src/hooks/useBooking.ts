@@ -242,7 +242,7 @@ export const useBooking = (
 
 	useEffect(() => {
 		if (state.status === "loading") {
-			const fetchData = async () => {
+			const fetchBookings = async () => {
 				try {
 					const bookingResponse = await fetch(
 						`${import.meta.env.VITE_API_URL}/bookings?movieId=${selectedMovieId}`,
@@ -267,7 +267,38 @@ export const useBooking = (
 				}
 			};
 
-			fetchData();
+			fetchBookings();
+		}
+
+		if (state.status === "submit") {
+			const submitBooking = async () => {
+				try {
+					const bookingResponse = await fetch(
+						`${import.meta.env.VITE_API_URL}/bookings`,
+						{
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								movieId: selectedMovieId,
+								customerName: state.formData?.name,
+								email: state.formData?.email,
+								seats: selectedSeats,
+								totalPrice,
+							}),
+						},
+					);
+
+					if (!bookingResponse.ok) {
+						throw new Error("Could not create booking");
+					}
+
+					dispatch({ type: "loading" });
+				} catch {
+					dispatch({ type: "error", payload: "Could not create booking" });
+				}
+			};
+
+			submitBooking();
 		}
 	}, [state.status]);
 
@@ -298,45 +329,14 @@ export const useBooking = (
 		});
 	};
 
-	const handleOnSubmit = async (e: FormEvent) => {
+	const handleOnSubmit = (e: FormEvent) => {
 		e.preventDefault();
 
 		if (!validateForm(formRef)) {
 			return;
 		}
 
-		dispatch({
-			type: "submit",
-		});
-
-		try {
-			const bookingData = {
-				movieId: selectedMovieId,
-				customerName: state?.formData?.name,
-				email: state?.formData?.email,
-				seats: selectedSeats,
-				totalPrice,
-			};
-
-			const bookingResponse = await fetch(
-				`${import.meta.env.VITE_API_URL}/bookings`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify(bookingData),
-				},
-			);
-
-			if (!bookingResponse.ok) {
-				throw new Error("Could not create booking");
-			}
-
-			dispatch({ type: "loading" });
-		} catch {
-			dispatch({ type: "error", payload: "Could not create booking" });
-		}
+		dispatch({ type: "submit" });
 	};
 
 	return {
